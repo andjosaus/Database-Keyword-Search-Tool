@@ -1,0 +1,1646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Research Database Keyword Search</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+            color: #2c3e50;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        
+        /* Modern Header */
+        .header {
+            background: linear-gradient(135deg, #00427A 0%, #003561 100%);
+            color: white;
+            padding: 60px 0 80px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%23FFC20E" fill-opacity="0.1" d="M0,192L48,197.3C96,203,192,213,288,192C384,171,480,117,576,112C672,107,768,149,864,165.3C960,181,1056,171,1152,149.3C1248,128,1344,96,1392,80L1440,64L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>') no-repeat bottom;
+            background-size: cover;
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        h1 {
+            font-size: 3rem;
+            font-weight: 300;
+            margin-bottom: 16px;
+            letter-spacing: -1px;
+        }
+        
+        .subtitle {
+            font-size: 1.25rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+        
+        /* Main Container */
+        .container {
+            max-width: 1200px;
+            margin: -40px auto 60px;
+            padding: 0 20px;
+            position: relative;
+            z-index: 10;
+        }
+        
+        /* Card Style Sections */
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0, 66, 122, 0.08);
+        }
+        
+        .card:hover {
+            box-shadow: 0 10px 40px rgba(0, 66, 122, 0.08);
+            transform: translateY(-2px);
+        }
+        
+        /* Section Headers */
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .section-icon {
+            width: 40px;
+            height: 40px;
+            background: #FFC20E;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-right: 16px;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #00427A;
+        }
+        
+        /* Modern Buttons */
+        .btn {
+            padding: 12px 24px;
+            border-radius: 10px;
+            border: none;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: #00427A;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #003561;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 66, 122, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #FFC20E;
+            color: #00427A;
+        }
+        
+        .btn-secondary:hover {
+            background: #FFD54F;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 194, 14, 0.3);
+        }
+        
+        .btn-danger {
+            background: #C61D23;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #A51A1F;
+        }
+        
+        .btn-success {
+            background: #A3A510;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #8B8E0D;
+        }
+        
+        /* File Upload Area */
+        .upload-area {
+            border: 2px dashed #00427A;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            background: #f8fafb;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-area:hover {
+            border-color: #FFC20E;
+            background: #fffbf0;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        /* File Tags */
+        .file-tag {
+            display: inline-flex;
+            align-items: center;
+            background: #E6F2FF;
+            padding: 8px 16px;
+            border-radius: 30px;
+            margin: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #00427A;
+            border: 1px solid #B3D4FF;
+            transition: all 0.2s ease;
+        }
+        
+        .file-tag:hover {
+            background: #D6E9FF;
+            border-color: #00427A;
+        }
+        
+        .file-count {
+            font-size: 12px;
+            color: #652D89;
+            margin-left: 8px;
+            font-weight: 600;
+        }
+        
+        .tag-remove {
+            margin-left: 8px;
+            cursor: pointer;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #C61D23;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+        
+        .tag-remove:hover {
+            background: #E02329;
+            transform: scale(1.1);
+        }
+        
+        /* Modern Input Fields */
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #00427A;
+            font-size: 14px;
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: #00427A;
+            box-shadow: 0 0 0 4px rgba(0, 66, 122, 0.1);
+        }
+        
+        textarea.input-field {
+            resize: vertical;
+            min-height: 120px;
+            font-family: inherit;
+        }
+        
+        /* Keyword Pills */
+        .keyword-pill {
+            display: inline-flex;
+            align-items: center;
+            background: linear-gradient(135deg, #E6F2FF 0%, #F0F7FF 100%);
+            padding: 10px 18px;
+            border-radius: 30px;
+            margin: 4px;
+            font-weight: 500;
+            color: #00427A;
+            border: 2px solid #B3D4FF;
+            transition: all 0.2s ease;
+        }
+        
+        .keyword-pill:hover {
+            border-color: #00427A;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 66, 122, 0.15);
+        }
+        
+        .pill-remove {
+            margin-left: 10px;
+            cursor: pointer;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #C61D23;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        
+        .pill-remove:hover {
+            background: #E02329;
+            transform: scale(1.1);
+        }
+        
+        /* Search Button */
+        .search-section {
+            background: linear-gradient(135deg, #FFC20E 0%, #FFD54F 100%);
+            padding: 40px;
+            border-radius: 16px;
+            text-align: center;
+            margin-top: 32px;
+        }
+        
+        .search-button {
+            background: #00427A;
+            color: white;
+            padding: 18px 48px;
+            font-size: 20px;
+            font-weight: 700;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 20px rgba(0, 66, 122, 0.3);
+        }
+        
+        .search-button:hover:not(:disabled) {
+            background: #003561;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(0, 66, 122, 0.4);
+        }
+        
+        .search-button:disabled {
+            background: #A7A9AC;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        
+        /* Results Section */
+        .results-container {
+            margin-top: 40px;
+        }
+        
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            text-align: center;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            border-color: #FFC20E;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #00427A;
+            margin-bottom: 8px;
+        }
+        
+        .stat-label {
+            color: #A7A9AC;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Download Section */
+        .download-section {
+            background: linear-gradient(135deg, #00427A 0%, #003561 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 16px;
+            text-align: center;
+            margin: 32px 0;
+        }
+        
+        .download-section h3 {
+            font-size: 2rem;
+            margin-bottom: 24px;
+            font-weight: 300;
+        }
+        
+        .download-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        /* Result Cards */
+        .result-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 16px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s ease;
+        }
+        
+        .result-card:hover {
+            border-color: #00427A;
+            box-shadow: 0 4px 16px rgba(0, 66, 122, 0.1);
+        }
+        
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        .result-keyword {
+            background: #00427A;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .result-count {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #00427A;
+        }
+        
+        /* Highlight */
+        .highlight {
+            background: #FFC20E;
+            color: #00427A;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        
+        /* Help Text */
+        .help-text {
+            font-size: 14px;
+            color: #652D89;
+            margin-top: 8px;
+            padding: 12px 16px;
+            background: #F8F6FF;
+            border-radius: 8px;
+            border-left: 4px solid #652D89;
+        }
+        
+        /* Divider */
+        .divider {
+            text-align: center;
+            margin: 24px 0;
+            position: relative;
+        }
+        
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #e0e0e0;
+        }
+        
+        .divider span {
+            background: white;
+            padding: 0 16px;
+            position: relative;
+            color: #A7A9AC;
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+        
+        /* Loading Animation */
+        .loading {
+            text-align: center;
+            padding: 60px;
+        }
+        
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid #f0f0f0;
+            border-top-color: #00427A;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* No Results */
+        .no-results {
+            text-align: center;
+            padding: 60px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+        
+        .no-results h3 {
+            color: #C61D23;
+            font-size: 1.5rem;
+            margin-bottom: 16px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .download-buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .card {
+            animation: fadeIn 0.5s ease forwards;
+        }
+        
+        .card:nth-child(1) { animation-delay: 0.1s; }
+        .card:nth-child(2) { animation-delay: 0.2s; }
+        .card:nth-child(3) { animation-delay: 0.3s; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h1>Research Database Search</h1>
+            <p class="subtitle">Powerful keyword search for research databases</p>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- File Upload Section -->
+        <div class="card">
+            <div class="section-header">
+                <div class="section-icon">📁</div>
+                <h2 class="section-title">Upload CSV Files</h2>
+            </div>
+            
+            <div class="upload-area">
+                <label for="fileInput" class="btn btn-secondary" style="margin-bottom: 16px;">
+                    <span>Choose CSV Files</span>
+                </label>
+                <input type="file" id="fileInput" multiple accept=".csv" />
+                <p style="color: #A7A9AC; margin-top: 8px;">or drag and drop files here</p>
+            </div>
+            
+            <div id="fileList" style="margin-top: 20px;"></div>
+            
+            <button class="btn btn-danger" onclick="window.clearAllFiles()" style="display: none; margin-top: 16px;" id="clearFilesBtn">
+                Clear All Files
+            </button>
+            
+            <div class="help-text">
+                <strong>💡 Pro Tip:</strong> For best results with special characters, save your CSV files as UTF-8. 
+                In Excel: File → Save As → Tools → Web Options → Encoding → Unicode (UTF-8)
+            </div>
+        </div>
+        
+        <!-- Keywords Section -->
+        <div class="card">
+            <div class="section-header">
+                <div class="section-icon">🔍</div>
+                <h2 class="section-title">Search Keywords</h2>
+            </div>
+            
+            <!-- Boolean Search -->
+            <div class="input-group">
+                <label class="input-label">Boolean Search String</label>
+                <textarea class="input-field" id="bulkInput" 
+                    placeholder="Example: (machine and learning) OR (artificial intelligence) OR (neural and network)"></textarea>
+                <button class="btn btn-primary" onclick="window.parseBulkKeywords()" style="margin-top: 12px;">
+                    Parse Boolean String
+                </button>
+            </div>
+            
+            <div class="divider"><span>OR</span></div>
+            
+            <!-- Single Keyword -->
+            <div class="input-group">
+                <label class="input-label">Single Keyword</label>
+                <input type="text" class="input-field" id="singleKeyword" 
+                    placeholder="Example: artificial intelligence">
+                <button class="btn btn-primary" onclick="window.addSingleKeyword()" style="margin-top: 12px;">
+                    Add Single Keyword
+                </button>
+            </div>
+            
+            <div class="divider"><span>OR</span></div>
+            
+            <!-- Keyword Pair -->
+            <div class="input-group">
+                <label class="input-label">Keyword Pair (AND Logic)</label>
+                <input type="text" class="input-field" id="keyword1" 
+                    placeholder="First keyword (e.g., 'machine')" style="margin-bottom: 12px;">
+                <input type="text" class="input-field" id="keyword2" 
+                    placeholder="Second keyword (e.g., 'learning')">
+                <button class="btn btn-primary" onclick="window.addKeywordPair()" style="margin-top: 12px;">
+                    Add Keyword Pair
+                </button>
+            </div>
+            
+            <div id="keywordList" style="margin-top: 24px;"></div>
+            
+            <button class="btn btn-danger" onclick="window.clearAllKeywords()" 
+                style="display: none; margin-top: 16px;" id="clearKeywordsBtn">
+                Clear All Keywords
+            </button>
+        </div>
+        
+        <!-- Search Button -->
+        <div class="search-section">
+            <button class="search-button" id="searchButton" onclick="window.searchKeywords()" disabled>
+                Search Database
+            </button>
+            <p style="margin-top: 16px; color: #00427A; font-size: 14px;">
+                Search typically takes 5-15 seconds depending on file size
+            </p>
+        </div>
+        
+        <!-- Results Container -->
+        <div id="results" class="results-container"></div>
+    </div>
+
+    <script>
+        let uploadedFiles = [];
+        let keywordPairs = [];
+        let singleKeywords = [];
+        let fileRowCounts = {};
+        
+        // Drag and Drop functionality
+        const uploadArea = document.querySelector('.upload-area');
+        
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, () => {
+                uploadArea.style.borderColor = '#FFC20E';
+                uploadArea.style.background = '#fffbf0';
+            }, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, () => {
+                uploadArea.style.borderColor = '#00427A';
+                uploadArea.style.background = '#f8fafb';
+            }, false);
+        });
+        
+        uploadArea.addEventListener('drop', handleDrop, false);
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles(files);
+        }
+        
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            handleFiles(e.target.files);
+        });
+        
+        async function handleFiles(files) {
+            const fileArray = Array.from(files);
+            let duplicates = [];
+            let newFiles = [];
+            
+            for (const file of fileArray) {
+                if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
+                    alert(`${file.name} is not a CSV file and was skipped.`);
+                    continue;
+                }
+                
+                if (uploadedFiles.some(f => f.name === file.name)) {
+                    duplicates.push(file.name);
+                } else {
+                    newFiles.push(file);
+                }
+            }
+            
+            if (duplicates.length > 0) {
+                alert(`The following files are already uploaded: ${duplicates.join(', ')}`);
+            }
+            
+            for (const file of newFiles) {
+                uploadedFiles.push(file);
+            }
+            
+            updateFileList();
+            
+            for (const file of newFiles) {
+                await getFileRowCount(file);
+                updateFileList();
+            }
+            
+            checkSearchButton();
+            document.getElementById('fileInput').value = '';
+        }
+        
+        async function getFileRowCount(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    let content = e.target.result;
+                    
+                    // Fix encoding issues
+                    content = content
+                        .replace(/Ã©/g, 'é')
+                        .replace(/Ã¨/g, 'è')
+                        .replace(/Ãª/g, 'ê')
+                        .replace(/Ã /g, 'à')
+                        .replace(/Ã¢/g, 'â')
+                        .replace(/Ã´/g, 'ô')
+                        .replace(/Ã®/g, 'î')
+                        .replace(/Ã¯/g, 'ï')
+                        .replace(/Ã§/g, 'ç')
+                        .replace(/Ã¹/g, 'ù')
+                        .replace(/Ã»/g, 'û')
+                        .replace(/Ã‰/g, 'É')
+                        .replace(/Ãˆ/g, 'È')
+                        .replace(/Ã€/g, 'À')
+                        .replace(/Ã‡/g, 'Ç')
+                        .replace(/Ã"/g, 'Ô')
+                        .replace(/Ã¶/g, 'ö')
+                        .replace(/Ã¼/g, 'ü')
+                        .replace(/Ã„/g, 'Ä')
+                        .replace(/Ã¤/g, 'ä')
+                        .replace(/Ã–/g, 'Ö')
+                        .replace(/Ãœ/g, 'Ü')
+                        .replace(/â€™/g, "'")
+                        .replace(/â€œ/g, '"')
+                        .replace(/â€/g, '"')
+                        .replace(/â€"/g, '–')
+                        .replace(/â€"/g, '—')
+                        .replace(/Â /g, ' ')
+                        .replace(/Ã±/g, 'ñ')
+                        .replace(/�/g, 'é');
+                    
+                    Papa.parse(content, {
+                        header: true,
+                        skipEmptyLines: true,
+                        encoding: 'UTF-8',
+                        complete: function(results) {
+                            fileRowCounts[file.name] = results.data.length;
+                            resolve();
+                        },
+                        error: function(error) {
+                            console.error('Parse error:', error);
+                            fileRowCounts[file.name] = 0;
+                            resolve();
+                        }
+                    });
+                };
+                reader.readAsText(file, 'UTF-8');
+            });
+        }
+        
+        function updateFileList() {
+            const fileList = document.getElementById('fileList');
+            const clearBtn = document.getElementById('clearFilesBtn');
+            
+            if (uploadedFiles.length === 0) {
+                fileList.innerHTML = '';
+                clearBtn.style.display = 'none';
+                return;
+            }
+            
+            clearBtn.style.display = 'inline-flex';
+            
+            let html = '<div style="display: flex; flex-wrap: wrap; gap: 8px;">';
+            html += uploadedFiles.map((file, index) => 
+                `<div class="file-tag">
+                    <span class="file-name">${file.name}</span>
+                    <span class="file-count">${fileRowCounts[file.name] !== undefined ? 
+                        fileRowCounts[file.name].toLocaleString() + ' rows' : 
+                        'loading...'}</span>
+                    <span class="tag-remove" onclick="window.removeFile(${index})">×</span>
+                </div>`
+            ).join('');
+            html += '</div>';
+            
+            if (uploadedFiles.length > 1) {
+                const totalRows = Object.values(fileRowCounts).reduce((sum, count) => sum + count, 0);
+                html += `<div style="margin-top: 16px; color: #00427A; font-weight: 600;">
+                    Total: ${uploadedFiles.length} files, ${totalRows.toLocaleString()} rows
+                </div>`;
+            }
+            
+            fileList.innerHTML = html;
+        }
+        
+        window.removeFile = function(index) {
+            const fileName = uploadedFiles[index].name;
+            uploadedFiles.splice(index, 1);
+            delete fileRowCounts[fileName];
+            updateFileList();
+            checkSearchButton();
+        }
+        
+        window.clearAllFiles = function() {
+            if (confirm('Remove all uploaded files?')) {
+                uploadedFiles = [];
+                fileRowCounts = {};
+                updateFileList();
+                checkSearchButton();
+            }
+        }
+        
+        window.addSingleKeyword = function() {
+            const keyword = document.getElementById('singleKeyword').value.trim();
+            
+            if (keyword) {
+                if (!singleKeywords.includes(keyword)) {
+                    singleKeywords.push(keyword);
+                    updateKeywordList();
+                    document.getElementById('singleKeyword').value = '';
+                    checkSearchButton();
+                } else {
+                    alert('This keyword already exists.');
+                }
+            }
+        }
+        
+        window.addKeywordPair = function() {
+            const keyword1 = document.getElementById('keyword1').value.trim();
+            const keyword2 = document.getElementById('keyword2').value.trim();
+            
+            if (keyword1 && keyword2) {
+                const exists = keywordPairs.some(pair => 
+                    (pair[0] === keyword1 && pair[1] === keyword2) ||
+                    (pair[0] === keyword2 && pair[1] === keyword1)
+                );
+                
+                if (!exists) {
+                    keywordPairs.push([keyword1, keyword2]);
+                    updateKeywordList();
+                    document.getElementById('keyword1').value = '';
+                    document.getElementById('keyword2').value = '';
+                    checkSearchButton();
+                } else {
+                    alert('This keyword pair already exists.');
+                }
+            }
+        }
+        
+        window.parseBulkKeywords = function() {
+            const bulkInput = document.getElementById('bulkInput').value;
+            if (!bulkInput.trim()) return;
+            
+            let addedPairs = 0;
+            let addedSingles = 0;
+            let skippedDuplicates = 0;
+            
+            let i = 0;
+            while (i < bulkInput.length) {
+                if (bulkInput[i] === '(') {
+                    let depth = 1;
+                    let j = i + 1;
+                    while (j < bulkInput.length && depth > 0) {
+                        if (bulkInput[j] === '(') depth++;
+                        else if (bulkInput[j] === ')') depth--;
+                        j++;
+                    }
+                    
+                    if (depth === 0) {
+                        const content = bulkInput.substring(i + 1, j - 1);
+                        
+                        let andIndex = -1;
+                        let parenDepth = 0;
+                        for (let k = 0; k < content.length - 3; k++) {
+                            if (content[k] === '(') parenDepth++;
+                            else if (content[k] === ')') parenDepth--;
+                            else if (parenDepth === 0 && content.substring(k, k + 5).match(/\s+and\s+/i)) {
+                                andIndex = k;
+                                break;
+                            }
+                        }
+                        
+                        if (andIndex !== -1) {
+                            let keyword1 = content.substring(0, andIndex).trim();
+                            let keyword2 = content.substring(andIndex + 5).trim();
+                            
+                            keyword1 = keyword1.replace(/^["']|["']$/g, '');
+                            keyword2 = keyword2.replace(/^["']|["']$/g, '');
+                            
+                            const exists = keywordPairs.some(pair => 
+                                (pair[0] === keyword1 && pair[1] === keyword2) ||
+                                (pair[0] === keyword2 && pair[1] === keyword1)
+                            );
+                            
+                            if (!exists && keyword1 && keyword2) {
+                                keywordPairs.push([keyword1, keyword2]);
+                                addedPairs++;
+                            } else if (exists) {
+                                skippedDuplicates++;
+                            }
+                        } else {
+                            let keyword = content.trim();
+                            keyword = keyword.replace(/^["']|["']$/g, '');
+                            
+                            if (keyword && !singleKeywords.includes(keyword)) {
+                                singleKeywords.push(keyword);
+                                addedSingles++;
+                            } else if (singleKeywords.includes(keyword)) {
+                                skippedDuplicates++;
+                            }
+                        }
+                        
+                        i = j;
+                    } else {
+                        i++;
+                    }
+                } else {
+                    i++;
+                }
+            }
+            
+            updateKeywordList();
+            checkSearchButton();
+            document.getElementById('bulkInput').value = '';
+            
+            let message = '';
+            if (addedPairs > 0 || addedSingles > 0) {
+                message = `✅ Added ${addedPairs} keyword pair${addedPairs !== 1 ? 's' : ''} and ${addedSingles} single keyword${addedSingles !== 1 ? 's' : ''}`;
+                if (skippedDuplicates > 0) {
+                    message += `\n⚠️ Skipped ${skippedDuplicates} duplicate${skippedDuplicates !== 1 ? 's' : ''}`;
+                }
+                alert(message);
+            } else if (skippedDuplicates > 0) {
+                alert(`⚠️ All keywords were duplicates.`);
+            } else {
+                alert('❌ No valid keywords found.');
+            }
+        }
+        
+        document.getElementById('singleKeyword').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                window.addSingleKeyword();
+            }
+        });
+        
+        document.getElementById('keyword2').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                window.addKeywordPair();
+            }
+        });
+        
+        function updateKeywordList() {
+            const keywordList = document.getElementById('keywordList');
+            const clearBtn = document.getElementById('clearKeywordsBtn');
+            
+            const totalKeywords = singleKeywords.length + keywordPairs.length;
+            
+            if (totalKeywords === 0) {
+                keywordList.innerHTML = '';
+                clearBtn.style.display = 'none';
+                return;
+            }
+            
+            clearBtn.style.display = 'inline-flex';
+            
+            let html = `<div style="margin-bottom: 16px; color: #00427A; font-weight: 600;">
+                Total keywords: ${totalKeywords} (${singleKeywords.length} single, ${keywordPairs.length} pairs)
+            </div>`;
+            
+            html += '<div style="display: flex; flex-wrap: wrap; gap: 8px;">';
+            
+            html += singleKeywords.map((keyword, index) => 
+                `<div class="keyword-pill">
+                    <span>"${keyword}"</span>
+                    <span class="pill-remove" onclick="window.removeSingleKeyword(${index})">×</span>
+                </div>`
+            ).join('');
+            
+            html += keywordPairs.map((pair, index) => 
+                `<div class="keyword-pill">
+                    <span>"${pair[0]}" AND "${pair[1]}"</span>
+                    <span class="pill-remove" onclick="window.removeKeywordPair(${index})">×</span>
+                </div>`
+            ).join('');
+            
+            html += '</div>';
+            
+            keywordList.innerHTML = html;
+        }
+        
+        window.removeSingleKeyword = function(index) {
+            singleKeywords.splice(index, 1);
+            updateKeywordList();
+            checkSearchButton();
+        }
+        
+        window.removeKeywordPair = function(index) {
+            keywordPairs.splice(index, 1);
+            updateKeywordList();
+            checkSearchButton();
+        }
+        
+        window.clearAllKeywords = function() {
+            if ((keywordPairs.length > 0 || singleKeywords.length > 0) && confirm('Clear all keywords?')) {
+                keywordPairs = [];
+                singleKeywords = [];
+                updateKeywordList();
+                checkSearchButton();
+            }
+        }
+        
+        function checkSearchButton() {
+            const searchButton = document.getElementById('searchButton');
+            searchButton.disabled = uploadedFiles.length === 0 || (keywordPairs.length === 0 && singleKeywords.length === 0);
+        }
+        
+        window.searchKeywords = async function() {
+            const resultsDiv = document.getElementById('results');
+            const searchBtn = document.getElementById('searchButton');
+            const originalBtnText = searchBtn.innerHTML;
+            
+            searchBtn.disabled = true;
+            searchBtn.innerHTML = 'Searching...';
+            
+            resultsDiv.innerHTML = `
+                <div class="card loading">
+                    <div class="loading-spinner"></div>
+                    <h3>Searching for keywords...</h3>
+                    <p style="color: #A7A9AC;">This typically takes 5-10 seconds</p>
+                </div>
+            `;
+            
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            const allResults = [];
+            let totalMatches = 0;
+            const globalSeenApplicationIds = new Set();
+            
+            for (let i = 0; i < uploadedFiles.length; i++) {
+                const file = uploadedFiles[i];
+                
+                resultsDiv.innerHTML = `
+                    <div class="card loading">
+                        <div class="loading-spinner"></div>
+                        <h3>Searching file ${i + 1} of ${uploadedFiles.length}</h3>
+                        <p style="color: #A7A9AC;">${file.name}</p>
+                    </div>
+                `;
+                
+                await new Promise(resolve => setTimeout(resolve, 10));
+                
+                const fileResults = await searchInFile(file, globalSeenApplicationIds);
+                if (fileResults.length > 0) {
+                    allResults.push({ file: file.name, results: fileResults });
+                    totalMatches += fileResults.reduce((sum, r) => sum + r.matches.length, 0);
+                }
+            }
+            
+            window.lastSearchResults = allResults;
+            displayResults(allResults, totalMatches);
+            
+            searchBtn.disabled = false;
+            searchBtn.innerHTML = originalBtnText;
+        }
+        
+        function searchInFile(file, globalSeenApplicationIds) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const results = [];
+                    let content = e.target.result;
+                    
+                    // Fix encoding
+                    content = content
+                        .replace(/Ã©/g, 'é')
+                        .replace(/Ã¨/g, 'è')
+                        .replace(/Ãª/g, 'ê')
+                        .replace(/Ã /g, 'à')
+                        .replace(/Ã¢/g, 'â')
+                        .replace(/Ã´/g, 'ô')
+                        .replace(/Ã®/g, 'î')
+                        .replace(/Ã¯/g, 'ï')
+                        .replace(/Ã§/g, 'ç')
+                        .replace(/Ã¹/g, 'ù')
+                        .replace(/Ã»/g, 'û')
+                        .replace(/Ã‰/g, 'É')
+                        .replace(/Ãˆ/g, 'È')
+                        .replace(/Ã€/g, 'À')
+                        .replace(/Ã‡/g, 'Ç')
+                        .replace(/Ã"/g, 'Ô')
+                        .replace(/�/g, 'é');
+                    
+                    Papa.parse(content, {
+                        header: true,
+                        skipEmptyLines: true,
+                        encoding: 'UTF-8',
+                        complete: function(parseResults) {
+                            const data = parseResults.data;
+                            const headers = parseResults.meta.fields;
+                            
+                            for (const keyword of singleKeywords) {
+                                const matches = [];
+                                const keywordLower = keyword.toLowerCase();
+                                
+                                data.forEach((row, index) => {
+                                    if (row.ApplicationID && globalSeenApplicationIds.has(row.ApplicationID)) {
+                                        return;
+                                    }
+                                    
+                                    const rowText = Object.values(row).join(' ').toLowerCase();
+                                    
+                                    if (rowText.indexOf(keywordLower) !== -1) {
+                                        if (row.ApplicationID) {
+                                            globalSeenApplicationIds.add(row.ApplicationID);
+                                        }
+                                        matches.push({ ...row, _rowIndex: index });
+                                    }
+                                });
+                                
+                                if (matches.length > 0) {
+                                    results.push({
+                                        keywords: [keyword],
+                                        matches: matches,
+                                        headers: headers,
+                                        isSingle: true
+                                    });
+                                }
+                            }
+                            
+                            for (const pair of keywordPairs) {
+                                const matches = [];
+                                const keyword1Lower = pair[0].toLowerCase();
+                                const keyword2Lower = pair[1].toLowerCase();
+                                
+                                data.forEach((row, index) => {
+                                    if (row.ApplicationID && globalSeenApplicationIds.has(row.ApplicationID)) {
+                                        return;
+                                    }
+                                    
+                                    const rowText = Object.values(row).join(' ').toLowerCase();
+                                    
+                                    if (rowText.indexOf(keyword1Lower) !== -1 && rowText.indexOf(keyword2Lower) !== -1) {
+                                        if (row.ApplicationID) {
+                                            globalSeenApplicationIds.add(row.ApplicationID);
+                                        }
+                                        matches.push({ ...row, _rowIndex: index });
+                                    }
+                                });
+                                
+                                if (matches.length > 0) {
+                                    results.push({
+                                        keywords: pair,
+                                        matches: matches,
+                                        headers: headers,
+                                        isSingle: false
+                                    });
+                                }
+                            }
+                            
+                            resolve(results);
+                        }
+                    });
+                };
+                reader.readAsText(file, 'UTF-8');
+            });
+        }
+        
+        function displayResults(allResults, totalMatches) {
+            const resultsDiv = document.getElementById('results');
+            
+            if (allResults.length === 0) {
+                const allSearchedKeywords = [];
+                singleKeywords.forEach(k => allSearchedKeywords.push(k));
+                keywordPairs.forEach(p => allSearchedKeywords.push(`${p[0]} AND ${p[1]}`));
+                
+                resultsDiv.innerHTML = `
+                    <div class="card no-results">
+                        <h3>No matches found</h3>
+                        <p>None of the ${allSearchedKeywords.length} keyword${allSearchedKeywords.length > 1 ? 's' : ''} matched any records</p>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 24px;">
+                            ${allSearchedKeywords.map(keyword => 
+                                `<div class="keyword-pill" style="border-color: #C61D23; background: #FFEBEC; color: #C61D23;">
+                                    <span>${keyword}</span>
+                                </div>`
+                            ).join('')}
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            const keywordStats = {};
+            let totalUniqueMatches = 0;
+            
+            allResults.forEach(fileResult => {
+                fileResult.results.forEach(result => {
+                    const keywordString = result.isSingle ? 
+                        result.keywords[0] : 
+                        `${result.keywords[0]} AND ${result.keywords[1]}`;
+                    
+                    if (!keywordStats[keywordString]) {
+                        keywordStats[keywordString] = {
+                            files: [],
+                            totalMatches: 0
+                        };
+                    }
+                    
+                    keywordStats[keywordString].files.push({
+                        name: fileResult.file,
+                        count: result.matches.length
+                    });
+                    keywordStats[keywordString].totalMatches += result.matches.length;
+                    totalUniqueMatches += result.matches.length;
+                });
+            });
+            
+            const noMatchKeywords = [];
+            singleKeywords.forEach(keyword => {
+                if (!keywordStats[keyword]) {
+                    noMatchKeywords.push(keyword);
+                }
+            });
+            keywordPairs.forEach(pair => {
+                const pairString = `${pair[0]} AND ${pair[1]}`;
+                if (!keywordStats[pairString]) {
+                    noMatchKeywords.push(pairString);
+                }
+            });
+            
+            let html = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">${totalUniqueMatches.toLocaleString()}</div>
+                        <div class="stat-label">Total Unique Matches</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${Object.keys(keywordStats).length}</div>
+                        <div class="stat-label">Keywords with Matches</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${noMatchKeywords.length}</div>
+                        <div class="stat-label">Keywords with No Matches</div>
+                    </div>
+                </div>
+                
+                <div class="download-section">
+                    <h3>🎉 Results Ready for Download</h3>
+                    <div class="download-buttons">
+                        <button class="btn btn-secondary" onclick="window.exportToCSV()" style="font-size: 18px;">
+                            📥 Download CSV
+                        </button>
+                        <button class="btn btn-success" onclick="window.exportToTSV()">
+                            📥 Download TSV (Excel)
+                        </button>
+                        <button class="btn btn-primary" onclick="window.exportCleanCSV()">
+                            📥 Clean Export
+                        </button>
+                    </div>
+                    <p style="margin-top: 20px; opacity: 0.9;">
+                        ${totalUniqueMatches.toLocaleString()} matched records ready for download
+                    </p>
+                </div>
+                
+                <div class="card">
+                    <h3 style="color: #00427A; margin-bottom: 24px;">📊 Keyword Match Summary</h3>
+            `;
+            
+            const sortedKeywords = Object.entries(keywordStats).sort((a, b) => b[1].totalMatches - a[1].totalMatches);
+            
+            sortedKeywords.forEach(([keyword, stats]) => {
+                html += `
+                    <div class="result-card">
+                        <div class="result-header">
+                            <span class="result-keyword">${keyword}</span>
+                            <span class="result-count">${stats.totalMatches.toLocaleString()} matches</span>
+                        </div>
+                        <div style="color: #652D89; font-size: 14px;">
+                            <strong>Found in:</strong> ${stats.files.map(f => `${f.name} (${f.count.toLocaleString()})`).join(' • ')}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            
+            if (noMatchKeywords.length > 0) {
+                html += `
+                    <div class="card">
+                        <h3 style="color: #C61D23; margin-bottom: 20px;">❌ Keywords with No Matches</h3>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                            ${noMatchKeywords.map(keyword => 
+                                `<div class="keyword-pill" style="border-color: #C61D23; background: #FFEBEC; color: #C61D23;">
+                                    <span>${keyword}</span>
+                                </div>`
+                            ).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        // Export functions
+        window.exportToCSV = function() {
+            if (!window.lastSearchResults || window.lastSearchResults.length === 0) {
+                if (singleKeywords.length > 0 || keywordPairs.length > 0) {
+                    exportNoMatchesCSV();
+                    return;
+                }
+                alert('No results to export');
+                return;
+            }
+            
+            let allHeaders = new Set(['File', 'Keywords', 'Match Count']);
+            window.lastSearchResults.forEach(fileResult => {
+                fileResult.results.forEach(result => {
+                    result.headers.forEach(header => allHeaders.add(header));
+                });
+            });
+            
+            const headers = Array.from(allHeaders);
+            let csvContent = headers.map(h => {
+                const cleanHeader = h.toString()
+                    .replace(/[\r\n]+/g, ' ')
+                    .replace(/"/g, '""')
+                    .trim();
+                return `"${cleanHeader}"`;
+            }).join(',') + '\n';
+            
+            window.lastSearchResults.forEach(fileResult => {
+                fileResult.results.forEach(result => {
+                    const keywordString = result.isSingle ? 
+                        result.keywords[0] : 
+                        `${result.keywords[0]} AND ${result.keywords[1]}`;
+                    
+                    result.matches.forEach(match => {
+                        const row = [];
+                        row.push(`"${fileResult.file}"`);
+                        row.push(`"${keywordString}"`);
+                        row.push(result.matches.length);
+                        
+                        headers.slice(3).forEach(header => {
+                            const value = match[header] || '';
+                            const escapedValue = value.toString().replace(/"/g, '""');
+                            row.push(/[,\n"]/.test(escapedValue) ? `"${escapedValue}"` : escapedValue);
+                        });
+                        
+                        csvContent += row.join(',') + '\n';
+                    });
+                });
+            });
+            
+            const matchedKeywords = new Set();
+            window.lastSearchResults.forEach(fileResult => {
+                fileResult.results.forEach(result => {
+                    const keywordString = result.isSingle ? 
+                        result.keywords[0] : 
+                        `${result.keywords[0]} AND ${result.keywords[1]}`;
+                    matchedKeywords.add(keywordString);
+                });
+            });
+            
+            singleKeywords.forEach(keyword => {
+                if (!matchedKeywords.has(keyword)) {
+                    const row = [];
+                    row.push('"No matches"');
+                    row.push(`"${keyword}"`);
+                    row.push('0');
+                    headers.slice(3).forEach(() => row.push(''));
+                    csvContent += row.join(',') + '\n';
+                }
+            });
+            
+            keywordPairs.forEach(pair => {
+                const pairString = `${pair[0]} AND ${pair[1]}`;
+                if (!matchedKeywords.has(pairString)) {
+                    const row = [];
+                    row.push('"No matches"');
+                    row.push(`"${pairString}"`);
+                    row.push('0');
+                    headers.slice(3).forEach(() => row.push(''));
+                    csvContent += row.join(',') + '\n';
+                }
+            });
+            
+            const BOM = '\uFEFF';
+            const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+            link.setAttribute('download', `keyword_search_results_${timestamp}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        window.exportToTSV = function() {
+            if (!window.lastSearchResults || window.lastSearchResults.length === 0) {
+                if (singleKeywords.length > 0 || keywordPairs.length > 0) {
+                    exportNoMatchesTSV();
+                    return;
+                }
+                alert('No results to export');
+                return;
+            }
+            
+            let allHeaders = new Set(['File', 'Keywords', 'Match Count']);
+            window.lastSearchResults.forEach(fileResult => {
+                fileResult.results.forEach(result => {
+                    result.headers.forEach(header => allHeaders.add(header));
+                });
+            });
+            
+            const headers = Array.from(allHeaders);
+            let tsvContent = headers.map(h => {
+                const cleanHeader = h.toString()
+                    .replace(/[\r\n]+/g, ' ')
+                    .replace(/\t/g, ' ')
+                    .trim();
+                return cleanHeader;
+            }).join('\t') + '\n';
+            
+            window.lastSearchResults.forEach(fileResult => {
+                fileResult.results.forEach(result => {
+                    const keywordString = result.isSingle ? 
+                        result.keywords[0] : 
+                        `${result.keywords[0]} AND ${result.keywords[1]}`;
+                    
+                    result.matches.forEach(match => {
+                        const row = [];
+                        row.push(fileResult.file);
+                        row.push(keywordString);
+                        row.push(result.matches.length);
+                        
+                        headers.slice(3).forEach(header => {
+                            const value = (match[header] || '').toString()
+                                .replace(/\t/g, ' ')
+                                .replace(/[\r\n]+/g, ' ');
+                            row.push(value);
+                        });
+                        
+                        tsvContent += row.join('\t') + '\n';
+                    });
+                });
+            });
+            
+            const matchedKeywords = new Set();
+            window.lastSearchResults.forEach(fileResult => {
+                fileResult.results.forEach(result => {
+                    const keywordString = result.isSingle ? 
+                        result.keywords[0] : 
+                        `${result.keywords[0]} AND ${result.keywords[1]}`;
+                    matchedKeywords.add(keywordString);
+                });
+            });
+            
+            singleKeywords.forEach(keyword => {
+                if (!matchedKeywords.has(keyword)) {
+                    const row = ['No matches', keyword, '0'];
+                    headers.slice(3).forEach(() => row.push(''));
+                    tsvContent += row.join('\t') + '\n';
+                }
+            });
+            
+            keywordPairs.forEach(pair => {
+                const pairString = `${pair[0]} AND ${pair[1]}`;
+                if (!matchedKeywords.has(pairString)) {
+                    const row = ['No matches', pairString, '0'];
+                    headers.slice(3).forEach(() => row.push(''));
+                    tsvContent += row.join('\t') + '\n';
+                }
+            });
+            
+            const BOM = '\uFEFF';
+            const blob = new Blob([BOM + tsvContent], { type: 'text/tab-separated-values;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+            link.setAttribute('download', `keyword_search_results_${timestamp}.tsv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        window.exportCleanCSV = function() {
+            if (!window.lastSearchResults || window.lastSearchResults.length === 0) {
+                alert('No results to export');
+                return;
+            }
+            
+            let allHeaders = new Set();
+            window.lastSearchResults.forEach(fileResult => {
+                fileResult.results.forEach(result => {
+                    result.headers.forEach(header => {
+                        if (header !== '_rowIndex') {
+                            allHeaders.add(header);
+                        }
+                    });
+                });
+            });
+            
+            const headers = Array.from(allHeaders);
+            let csvContent = headers.map(h => {
+                const cleanHeader = h.toString()
+                    .replace(/[\r\n]+/g, ' ')
+                    .replace(/"/g, '""')
+                    .trim();
+                return `"${cleanHeader}"`;
+            }).join(',') + '\n';
+            
+            window.lastSearchResults.forEach(fileResult => {
+                fileResult.results.forEach(result => {
+                    result.matches.forEach(match => {
+                        const row = [];
+                        headers.forEach(header => {
+                            const value = match[header] || '';
+                            const escapedValue = value.toString().replace(/"/g, '""');
+                            row.push(/[,\n"]/.test(escapedValue) ? `"${escapedValue}"` : escapedValue);
+                        });
+                        csvContent += row.join(',') + '\n';
+                    });
+                });
+            });
+            
+            const BOM = '\uFEFF';
+            const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+            link.setAttribute('download', `clean_results_${timestamp}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        function exportNoMatchesCSV() {
+            let csvContent = '"File","Keywords","Match Count"\n';
+            singleKeywords.forEach(keyword => {
+                csvContent += `"No matches","${keyword}","0"\n`;
+            });
+            keywordPairs.forEach(pair => {
+                csvContent += `"No matches","${pair[0]} AND ${pair[1]}","0"\n`;
+            });
+            
+            const BOM = '\uFEFF';
+            const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+            link.setAttribute('download', `keyword_search_results_${timestamp}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        function exportNoMatchesTSV() {
+            let tsvContent = 'File\tKeywords\tMatch Count\n';
+            singleKeywords.forEach(keyword => {
+                tsvContent += `No matches\t${keyword}\t0\n`;
+            });
+            keywordPairs.forEach(pair => {
+                tsvContent += `No matches\t${pair[0]} AND ${pair[1]}\t0\n`;
+            });
+            
+            const BOM = '\uFEFF';
+            const blob = new Blob([BOM + tsvContent], { type: 'text/tab-separated-values;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+            link.setAttribute('download', `keyword_search_results_${timestamp}.tsv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
